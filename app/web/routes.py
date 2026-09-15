@@ -605,6 +605,19 @@ async def karte_page(
             "valid_until": res.valid_until,
         })
 
+    # Build current_vehicles list (all active reservations with a spot)
+    current_vehicles = []
+    for res in reservation_repo.find_active_with_spot():
+        current_vehicles.append({
+            "id": res.id,
+            "plate_raw": res.plate_raw or "—",
+            "first_name": res.first_name or "",
+            "last_name": res.last_name or "",
+            "provider": res.provider,
+            "valid_from": res.valid_from,
+            "valid_until": res.valid_until,
+        })
+
     map_mode = mode or map_ctx["map_mode"]
     now = datetime.now(tz)
 
@@ -614,6 +627,7 @@ async def karte_page(
         "selected_spot": selected_spot,
         "unassigned_reservations": unassigned_reservations,
         "other_spot_reservations": other_spot_reservations,
+        "current_vehicles": current_vehicles,
         "map_mode": map_mode,
         "has_photo": map_ctx["has_photo"],
         "now_date": now.strftime("%d.%m."),

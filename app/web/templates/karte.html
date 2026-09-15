@@ -117,6 +117,28 @@
     </div>
     {% endif %}
 
-    {% include "_map_svg.html" %}
+    <div class="karte-map-wrapper" style="flex:1;">
+        {% include "_map_svg.html" %}
+        
+        <!-- Aktuelle Fahrzeuge Liste -->
+        <div class="current-vehicles-section">
+            <h3 style="font-size:1rem;margin-bottom:0.75rem;color:var(--color-primary);">🚗 Aktuelle Fahrzeuge</h3>
+            <div class="current-vehicles-grid">
+                {% for res in current_vehicles %}
+                <div class="vehicle-plate-item" data-plate="{{ res.plate_raw }}" data-info='{% if res.valid_from and res.valid_until %}{{ res.valid_from.strftime('%d.%m.') }} {{ res.valid_from.strftime('%H:%M') }} - {{ res.valid_until.strftime('%H:%M') }}{% endif %}|{{ res.first_name or '' }} {{ res.last_name or '' }}|{{ res.provider }}'>
+                    <span class="vehicle-plate">{{ res.plate_raw or '—' }}</span>
+                    <div class="vehicle-info-tooltip">
+                        <div class="tooltip-row"><strong>Name:</strong> {{ res.first_name or '' }} {{ res.last_name or '' }}</div>
+                        <div class="tooltip-row"><strong>Anbieter:</strong> {{ res.provider }}</div>
+                        <div class="tooltip-row"><strong>Zeit:</strong> {% if res.valid_from and res.valid_until %}{{ res.valid_from.strftime('%d.%m.') }} {{ res.valid_from.strftime('%H:%M') }} - {{ res.valid_until.strftime('%H:%M') }}{% endif %}</div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not current_vehicles %}
+                <div class="empty-state" style="padding:1rem;color:var(--color-text-secondary);font-size:0.9rem;">Keine aktuellen Fahrzeuge</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
