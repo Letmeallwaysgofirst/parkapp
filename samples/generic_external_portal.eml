@@ -1,0 +1,19 @@
+From: noreply@external-parking-portal.example.com
+To: parkplatz@example.com
+Subject: Neue Parkplatzbuchung / New Parking Booking
+Message-ID: <generic-portal-booking-002@external-parking-portal.example.com>
+Date: Sat, 04 May 2026 12:17:00 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Ein Parkplatz wurde bei Ihnen für das folgende Fahrzeug gebucht:
+Kennzeichen des Fahrzeugs: ABC123
+Name des Fahrzeughalters: John Doe
+Datum und Uhrzeit: 04/05/2026 12:17
+Um Details anderer Buchungen zu sehen, loggen Sie sich bitte in Ihrem Portal ein.
+Herzlichen Dank.
+
+--
+Um keine E-Mails mehr von uns zu erhalten, klicken Sie bitte auf:
+Unsubscribe | Abmelden
+External Parking Portal GmbH, Musterstraße 1, 12345 Musterstadt

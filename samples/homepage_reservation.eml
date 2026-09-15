@@ -1,0 +1,21 @@
+From: noreply@example-site.de
+To: parkplatz@example.com
+Subject: Reservierungsanfrage für Caravan Stellplatz
+Message-ID: <homepage-reservation-001@example-site.de>
+Date: Thu, 15 May 2026 14:30:00 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Neue Reservierungsanfrage von example-site.de
+
+Vorname / Nachname: Max Mustermann
+E-Mail: max.mustermann@example.com
+von: 2026-05-11
+bis: 2026-05-12
+Uhrzeit Ankunft ca.: 21:45
+Uhrzeit Abfahrt ca.: 08:00
+Kennzeichen: TGM515
+Gutschein-Code: 
+
+--
+Diese Reservierungsanfrage wurde über das Online-Formular auf example-site.de gestellt.
