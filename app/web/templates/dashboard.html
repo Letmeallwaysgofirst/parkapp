@@ -84,12 +84,12 @@
 </div>
 
 {# Embedded Platzkarte section directly below "Aktuell auf dem Platz" #}
-<div class="page-header" style="margin-top: 2rem;">
+<div class="page-header" style="margin-top: 1.5rem;">
     <h2>📍 Platzkarte</h2>
     <a href="/karte" class="btn btn-outline btn-sm">Große Ansicht öffnen</a>
 </div>
 
-<div class="karte-legend-bar">
+<div class="karte-legend-bar" style="margin-bottom: 0.75rem;">
     <div class="karte-legend">
         <span class="legend-item"><span class="legend-color" style="background:#22c55e;"></span> Frei</span>
         <span class="legend-item"><span class="legend-color" style="background:#ef4444;"></span> Belegt</span>
@@ -106,7 +106,7 @@
 </div>
 
 {% if spots %}
-<div class="karte-map-container">
+<div class="karte-map-container" style="max-height: 500px; overflow: hidden;">
     {% include "_map_svg.html" %}
 </div>
 {% else %}
