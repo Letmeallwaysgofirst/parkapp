@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Platzkarte{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2>🅿️ Platzkarte</h2>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-2" onclick="toggleMode()">
+                    Modus wechseln (<span id="mode-label">Schema</span>)
+                </button>
+                <a href="{{ url_for('routes.dashboard') }}" class="btn btn-sm btn-primary">Zum Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Counter -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body py-2">
+                    <span class="badge bg-success me-2">{{ stats.free }} frei</span>
+                    <span class="badge bg-danger me-2">{{ stats.occupied }} belegt</span>
+                    <span class="badge bg-warning text-dark me-2">{{ stats.closed }} gesperrt</span>
+                    <span class="badge bg-secondary">{{ stats.no_spot }} ohne Platz</span>
+                    
+                    {% if stats.no_spot > 0 %}
+                    <form action="{{ url_for('routes.auto_place') }}" method="POST" class="d-inline ms-3">
+                        <button type="submit" class="btn btn-sm btn-info text-white">
+                            🤖 Unzusetzte automatisch verteilen
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Karte (Links/Oben) -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body p-0 position-relative" style="min-height: 600px; background: #f8f9fa;">
+                    
+                    <!-- SVG Overlay Container -->
+                    <div id="map-container" class="w-100 h-100 position-relative">
+                        <!-- Foto Modus Hintergrund (optional) -->
+                        <img src="{{ url_for('static', filename='lot.jpg') }}" 
+                             id="bg-photo" 
+                             class="w-100 h-100 object-fit-cover" 
+                             style="display: none; opacity: 0.3;" alt="Hintergrundfoto">
+                        
+                        <!-- SVG Karte -->
+                        <svg id="parking-svg" class="w-100 h-100" viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid meet">
+                            {% for spot in spots %}
+                            {% set color = '#28a745' if not spot.is_occupied and not spot.is_closed else '#dc3545' if spot.is_occupied else '#ffc107' %}
+                            {% set stroke = '#e83e8c' if spot.spot_type == 'WOMEN' else '#333' %}
+                            {% set stroke_width = 3 if spot.spot_type == 'WOMEN' else 1 %}
+                            
+                            <g class="spot-group" 
+                               data-spot-id="{{ spot.id }}" 
+                               data-status="{{ 'occupied' if spot.is_occupied else 'closed' if spot.is_closed else 'free' }}"
+                               style="cursor: pointer;"
+                               onclick="showSpotPanel({{ spot.id }}, '{{ spot.spot_number }}', '{{ spot.status }}')">
+                                
+                                <!-- Platz Form -->
+                                <rect x="{{ spot.x }}" y="{{ spot.y }}" 
+                                      width="{{ spot.width }}" height="{{ spot.height }}"
+                                      transform="rotate({{ spot.rotation }}, {{ spot.x + spot.width/2 }}, {{ spot.y + spot.height/2 }})"
+                                      fill="{{ color }}" 
+                                      stroke="{{ stroke }}" 
+                                      stroke-width="{{ stroke_width }}"
+                                      class="spot-rect"/>
+                                
+                                <!-- Text Label -->
+                                <text x="{{ spot.x + spot.width/2 }}" y="{{ spot.y + spot.height/2 }}" 
+                                      text-anchor="middle" dominant-baseline="middle" 
+                                      fill="white" font-weight="bold" font-size="14"
+                                      transform="rotate({{ spot.rotation }}, {{ spot.x + spot.width/2 }}, {{ spot.y + spot.height/2 }})">
+                                    {{ spot.spot_number }}
+                                </text>
+
+                                <!-- Warn Icon wenn belegt + gesperrt -->
+                                {% if spot.is_occupied and spot.is_closed %}
+                                <text x="{{ spot.x + spot.width - 10 }}" y="{{ spot.y + 15 }}" fill="black" font-size="20">⚠️</text>
+                                {% endif %}
+                            </g>
+                            {% endfor %}
+                        </svg>
+                    </div>
+
+                    <!-- Legende -->
+                    <div class="position-absolute bottom-0 start-0 m-3 bg-white p-2 rounded shadow-sm small">
+                        <div><span class="badge bg-success"></span> Frei</div>
+                        <div><span class="badge bg-danger"></span> Belegt</div>
+                        <div><span class="badge bg-warning"></span> Gesperrt</div>
+                        <div><span style="display:inline-block;width:15px;height:15px;border:2px solid #e83e8c"></span> Frauenparkplatz</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Panel (Rechts/Unten) - Wird per JS gefüllt -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm" id="spot-panel" style="min-height: 600px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Platz Details</h5>
+                </div>
+                <div class="card-body text-center text-muted" id="panel-content">
+                    <p class="mt-5">Klicken Sie auf einen Platz auf der Karte,<br>um Details zu sehen oder ein Fahrzeug zuzuweisen.</p>
+                    <i class="bi bi-hand-index-thumb display-1"></i>
+                </div>
+            </div>
+            
+            <!-- Liste der Fahrzeuge ohne Platz (Quick Access) -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">Fahrzeuge ohne Platz ({{ stats.no_spot }})</h6>
+                </div>
+                <ul class="list-group list-group-flush small">
+                    {% for res in no_spot_reservations %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ res.plate }}</strong><br>
+                            <small class="text-muted">{{ res.name }} ({{ res.provider }})</small>
+                        </div>
+                        <span class="badge bg-warning text-dark">Ohne Platz</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">Alle Fahrzeuge haben einen Platz.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal / Panel Logic (Inline JS für Interaktion) -->
+<script>
+let currentMode = 'schema';
+
+function toggleMode() {
+    const bg = document.getElementById('bg-photo');
+    const label = document.getElementById('mode-label');
+    if (currentMode === 'schema') {
+        bg.style.display = 'block';
+        label.innerText = 'Foto';
+        currentMode = 'foto';
+    } else {
+        bg.style.display = 'none';
+        label.innerText = 'Schema';
+        currentMode = 'schema';
+    }
+}
+
+// Diese Funktion wird vom Server gerendert oder per Fetch nachgeladen
+async function showSpotPanel(spotId, spotNumber, status) {
+    const panel = document.getElementById('panel-content');
+    panel.innerHTML = '<div class="spinner-border text-primary" role="status"></div><p>Lade Daten...</p>';
+
+    try {
+        // Wir laden den Inhalt des Panels dynamisch nach
+        const response = await fetch(`/spots/${spotId}/panel`);
+        if (!response.ok) throw new Error('Netzwerkfehler');
+        const html = await response.text();
+        panel.innerHTML = html;
+        
+        // Scroll zum Panel auf Mobile
+        if (window.innerWidth < 992) {
+            document.getElementById('spot-panel').scrollIntoView({behavior: 'smooth'});
+        }
+    } catch (e) {
+        console.error(e);
+        panel.innerHTML = `<div class="alert alert-danger">Fehler beim Laden: ${e.message}</div>`;
+    }
+}
+</script>
+{% endblock %}
