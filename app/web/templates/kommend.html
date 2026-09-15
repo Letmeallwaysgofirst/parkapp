@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Kommende Reservierungen - Parking Cockpit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>📅 Kommende Reservierungen</h2>
+    <span>Nächste {{ days }} Tage</span>
+</div>
+
+{% if grouped %}
+{% for day, reservations in grouped.items() %}
+<div class="day-group">
+    <h3 class="day-header">{{ day }}</h3>
+    <div class="reservation-grid">
+        {% for res in reservations %}
+        <div class="reservation-card">
+            <div class="reservation-plate">{{ res.plate_raw or '—' }}</div>
+            <div class="reservation-name">
+                {{ res.first_name or '' }} {{ res.last_name or '' }}
+                {% if not res.first_name and not res.last_name %}—{% endif %}
+            </div>
+            <div class="reservation-time">
+                {{ res.valid_from.strftime('%H:%M') if res.valid_from else '—' }}
+                {% if res.valid_until %}
+                — {{ res.valid_until.strftime('%H:%M') }} Uhr
+                {% else %}
+                — ? Uhr
+                {% endif %}
+            </div>
+            <div class="reservation-meta">
+                {% if res.provider %}
+                <span class="badge badge-provider">{{ res.provider }}</span>
+                {% endif %}
+                {% if res.status == 'NEW' %}
+                <span class="badge badge-status-new">Neu</span>
+                {% elif res.status == 'CONFIRMED' %}
+                <span class="badge badge-status-confirmed">Bestätigt</span>
+                {% endif %}
+                {% if res.incomplete_flag %}
+                <span class="badge" style="background: var(--color-warning); color: white;">Unvollständig</span>
+                {% endif %}
+            </div>
+            <div style="margin-top: 1rem;">
+                <a href="/reservierung/{{ res.id }}" class="btn btn-sm btn-outline">Details</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">📅</div>
+    <h3>Keine kommenden Reservierungen</h3>
+    <p>Keine Reservierungen für die nächsten {{ days }} Tage.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Aktuell auf dem Platz - Parking Cockpit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>🚗 Aktuell auf dem Platz</h2>
+    <span class="badge badge-count" style="font-size: 1rem; padding: 0.5rem 1rem;">
+        {{ reservations|length }} Fahrzeuge
+    </span>
+</div>
+
+<div class="stats-bar">
+    <div class="stat-item">
+        <div class="stat-value">{{ stats.current }}</div>
+        <div class="stat-label">Aktuell hier</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-value">{{ stats.arriving_today }}</div>
+        <div class="stat-label">Ankunft heute</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-value">{{ stats.queue }}</div>
+        <div class="stat-label">Klärungsfälle</div>
+    </div>
+</div>
+
+{% if reservations %}
+<div class="reservation-grid">
+    {% for res in reservations %}
+    <div class="reservation-card">
+        <div class="reservation-plate">{{ res.plate_raw or '—' }}</div>
+        <div class="reservation-name">
+            {{ res.first_name or '' }} {{ res.last_name or '' }}
+            {% if not res.first_name and not res.last_name %}—{% endif %}
+        </div>
+        <div class="reservation-time">
+            bis {{ res.valid_until.strftime('%H:%M') if res.valid_until else '—' }} Uhr
+            <br>
+            <small>
+                {% if res.valid_from %}{{ res.valid_from.strftime('%d.%m.') }}{% endif %}
+                {% if res.provider %}
+                <span class="badge badge-provider" style="font-size: 0.65rem;">{{ res.provider }}</span>
+                {% endif %}
+            </small>
+        </div>
+        <div class="reservation-meta">
+            {% if res.status == 'NEW' %}
+            <span class="badge badge-status-new">Neu</span>
+            {% elif res.status == 'CONFIRMED' %}
+            <span class="badge badge-status-confirmed">Bestätigt</span>
+            {% endif %}
+            {% if res.incomplete_flag %}
+            <span class="badge" style="background: var(--color-warning); color: white;">Unvollständig</span>
+            {% endif %}
+        </div>
+        <div style="margin-top: 1rem;">
+            {% if res.spot_id %}
+            <a href="/karte?spot_id={{ res.spot_id }}" class="btn btn-sm btn-outline" title="Auf der Platzkarte zeigen">📍 Platz</a>
+            {% else %}
+            <a href="/karte#counter-no-spot-anchor" class="btn btn-sm btn-outline" title="Noch kein Platz zugewiesen">📍 ohne Platz</a>
+            {% endif %}
+            <a href="/reservierung/{{ res.id }}" class="btn btn-sm btn-outline">Details</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">🅿</div>
+    <h3>Keine Fahrzeuge vorhanden</h3>
+    <p>Derzeit sind keine Reservierungen aktiv.</p>
+    <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--color-text-secondary);">
+        E-Mails werden automatisch im Hintergrund abgerufen.
+    </p>
+</div>
+{% endif %}
+
+<div style="margin-top: 2rem; text-align: center;">
+    <small style="color: var(--color-text-secondary);">
+        Zeigt Reservierungen mit Zeitfenster einschließlich aktueller Zeit.
+        {% if grace_minutes > 0 %}Inklusive {{ grace_minutes }} Minuten Puffer.{% endif %}
+    </small>
+</div>
+
+{# Embedded Platzkarte section directly below "Aktuell auf dem Platz" #}
+<div class="page-header" style="margin-top: 2rem;">
+    <h2>📍 Platzkarte</h2>
+    <a href="/karte" class="btn btn-outline btn-sm">Große Ansicht öffnen</a>
+</div>
+
+<div class="karte-legend-bar">
+    <div class="karte-legend">
+        <span class="legend-item"><span class="legend-color" style="background:#22c55e;"></span> Frei</span>
+        <span class="legend-item"><span class="legend-color" style="background:#ef4444;"></span> Belegt</span>
+        <span class="legend-item"><span class="legend-color" style="background:#eab308;"></span> Gesperrt</span>
+        <span class="legend-item"><span class="legend-color occupied-warn"></span> B+G</span>
+        <span class="legend-item women-indicator"> Frauen</span>
+    </div>
+    <div class="karte-counters">
+        <span class="counter counter-free" id="counter-no-spot-anchor">{{ counters.free }} frei</span>
+        <span class="counter counter-occupied">{{ counters.occupied }} belegt</span>
+        <span class="counter counter-closed">{{ counters.closed }} gesperrt</span>
+        <span class="counter counter-no-spot{% if counters.no_spot > 0 %} spot-pulse{% endif %}">{{ counters.no_spot }} ohne Platz</span>
+    </div>
+</div>
+
+{% if spots %}
+<div class="karte-map-container">
+    {% include "_map_svg.html" %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">📐</div>
+    <h3>Keine Plätze konfiguriert</h3>
+    <p>Legen Sie Plätze in <code>spots.yaml</code> an und führen Sie <code>python -m app.cli spots-reload</code> aus.</p>
+</div>
+{% endif %}
+{% endblock %}

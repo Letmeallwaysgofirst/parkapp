@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Klärungsfälle - Parking Cockpit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>⚠️ Klärungsfälle</h2>
+    <span>{{ queue|length }} offene Fälle</span>
+</div>
+
+{% if queue %}
+<div class="card">
+    {% for item in queue %}
+    <div class="queue-item{% if item.resolved %} resolved{% endif %}" id="queue-{{ item.id }}">
+        <div class="queue-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div>
+                <div class="queue-reason">
+                    {% if item.reason == 'UNKNOWN_PROVIDER' %}Unbekannter Anbieter{% endif %}
+                    {% if item.reason == 'PARSE_FAILED' %}Parsing fehlgeschlagen{% endif %}
+                    {% if item.reason == 'SUSPECTED_DUPLICATE' %}Verdacht auf Duplikat{% endif %}
+                    {% if item.reason == 'CANCEL_OR_CHANGE_MAIL' %}Storno-/Änderungs-E-Mail{% endif %}
+                    {% if item.reason == 'INCOMPLETE_DATA' %}Unvollständige Daten{% endif %}
+                </div>
+                <div style="font-size: 0.85rem; color: var(--color-text-secondary);">
+                    Eingegangen: {{ item.created_at.strftime('%d.%m.%Y %H:%M') if item.created_at else '—' }}
+                    | Message-ID: <code>{{ item.message_id[:50] }}...</code>
+                </div>
+            </div>
+            <div class="flex gap-1">
+                {% if not item.resolved %}
+                <button onclick="showMail('{{ item.id }}')" class="btn btn-sm btn-outline">📧 E-Mail anzeigen</button>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if item.resolved %}
+        <div style="font-size: 0.9rem; color: var(--color-success); margin-top: 0.5rem;">
+            ✅ Erledigt: {{ item.resolved_note or 'Keine Notiz' }}
+        </div>
+        {% endif %}
+        
+        {% if item.notes %}
+        <div style="font-size: 0.85rem; color: var(--color-text-secondary); margin-top: 0.5rem;">
+            Notiz: {{ item.notes[:200] }}{% if item.notes|length > 200 %}...{% endif %}
+        </div>
+        {% endif %}
+        
+        {% if not item.resolved %}
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border);">
+            <form method="POST" action="/klärungsfälle/{{ item.id }}/erledigen" style="display: inline;">
+                <input type="hidden" name="note" id="note-{{ item.id }}" value="">
+                <button type="submit" class="btn btn-sm btn-secondary">✓ Als erledigt markieren</button>
+            </form>
+            <a href="/reservierung/Neu?message_id={{ item.message_id }}" class="btn btn-sm btn-primary">+ Als Reservierung anlegen</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Mail modal -->
+    <div id="mail-modal-{{ item.id }}" class="modal-overlay" style="display: none;" onclick="hideMail('{{ item.id }}')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>E-Mail Inhalt</h3>
+                <button class="modal-close" onclick="hideMail('{{ item.id }}')">&times;</button>
+            </div>
+            <div class="mail-content" id="mail-content-{{ item.id }}">
+                {% if item.raw_mail_path %}
+                <em>Laden...</em>
+                {% else %}
+                <em>Keine E-Mail-Datei vorhanden.</em>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">✅</div>
+    <h3>Keine Klärungsfälle</h3>
+    <p>Alle E-Mails wurden erfolgreich verarbeitet.</p>
+</div>
+{% endif %}
+
+<script>
+// Simple vanilla JS for mail display - no external dependencies
+function showMail(id) {
+    const modal = document.getElementById('mail-modal-' + id);
+    const content = document.getElementById('mail-content-' + id);
+    
+    if (modal && content && content.innerHTML.includes('Laden')) {
+        // Fetch mail content
+        fetch('/klärungsfälle/mail/' + id)
+            .then(r => r.text())
+            .then(text => {
+                // Escape HTML for safe display
+                const escaped = text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+                content.innerHTML = escaped;
+            })
+            .catch(() => {
+                content.innerHTML = '<em>Fehler beim Laden der E-Mail.</em>';
+            });
+    }
+    
+    modal.style.display = 'flex';
+}
+
+function hideMail(id) {
+    const modal = document.getElementById('mail-modal-' + id);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

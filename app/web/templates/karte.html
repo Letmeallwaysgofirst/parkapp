@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Platzkarte - Parking Cockpit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>📍 Platzkarte</h2>
+    <div class="header-actions">
+        <form method="get" action="/karte" style="display:inline-flex;gap:0.5rem;align-items:center;">
+            <label style="font-size:0.85rem;color:var(--color-text-secondary);">Modus:</label>
+            <select name="mode" onchange="this.form.submit()" style="padding:0.4rem 0.6rem;border:1px solid var(--color-border);border-radius:4px;">
+                <option value="schema" {% if map_mode!='foto' %}selected{% endif %}>Schema-Modus</option>
+                <option value="foto" {% if map_mode=='foto' %}selected{% endif %}>Foto-Modus</option>
+            </select>
+        </form>
+        {% if has_photo %}<span class="badge" style="background:var(--color-warning);color:white;"> Luftbild</span>{% endif %}
+        {% if counters.no_spot>0 %}
+        <form method="post" action="/karte/auto-place" style="display:inline;">
+            <button type="submit" class="btn btn-outline btn-sm" onclick="return confirm('{{ counters.no_spot }} unzusetzende Reservierungen automatisch verteilen?')">🚚 Auto ({{ counters.no_spot }})</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="karte-legend-bar">
+    <div class="karte-legend">
+        <span class="legend-item"><span class="legend-color" style="background:#22c55e;"></span> Frei</span>
+        <span class="legend-item"><span class="legend-color" style="background:#ef4444;"></span> Belegt</span>
+        <span class="legend-item"><span class="legend-color" style="background:#eab308;"></span> Gesperrt</span>
+        <span class="legend-item"><span class="legend-color occupied-warn"></span> B+G</span>
+        <span class="legend-item women-indicator"> Frauen</span>
+    </div>
+    <div class="karte-counters">
+        <span class="counter counter-free">{{ counters.free }} frei</span>
+        <span class="counter counter-occupied">{{ counters.occupied }} belegt</span>
+        <span class="counter counter-closed">{{ counters.closed }} gesperrt</span>
+        <span class="counter counter-no-spot">{{ counters.no_spot }} ohne Platz</span>
+    </div>
+</div>
+
+<div class="karte-map-container">
+    {% if selected_spot %}
+    <div class="spot-panel">
+        <div class="spot-panel-header">
+            <h3>Platz {{ selected_spot.spot_number }}</h3>
+            <span class="badge badge-type badge-{{ selected_spot.spot_type|lower }}">{{ selected_spot.spot_type }}</span>
+            {% if selected_spot.reservation %}<a href="/reservierung/{{ selected_spot.reservation.id }}" class="btn btn-sm btn-outline" style="margin-left:auto;"></a>{% endif %}
+            <a href="/karte" class="btn-close">✕</a>
+        </div>
+        <div class="spot-panel-body">
+            {% if selected_spot.is_closed %}
+            <div class="alert alert-warning" style="margin-bottom:1rem;"><strong> Gesperrt:</strong> {{ selected_spot.closed_reason or 'Kein Grund' }}</div>
+            <form method="post" action="/spots/{{ selected_spot.id }}/open"><button type="submit" class="btn btn-primary" style="width:100%;">✓ Entsperren</button></form>
+            {% elif selected_spot.reservation %}
+            <div class="spot-occupant-card">
+                <div class="occupant-plate">{{ selected_spot.reservation.plate_raw or '—' }}</div>
+                <div class="occupant-name">{{ selected_spot.reservation.first_name or '' }} {{ selected_spot.reservation.last_name or '' }}{% if not selected_spot.reservation.first_name and not selected_spot.reservation.last_name %}—{% endif %}</div>
+                <div class="occupant-provider"><span class="badge badge-provider">{{ selected_spot.reservation.provider }}</span></div>
+                <div class="occupant-time">{% if selected_spot.reservation.valid_from and selected_spot.reservation.valid_until %}{{ selected_spot.reservation.valid_from.strftime('%d.%m.') }} {{ selected_spot.reservation.valid_from.strftime('%H:%M') }} – {{ selected_spot.reservation.valid_until.strftime('%H:%M') }}<br><strong>bis {{ selected_spot.reservation.valid_until.strftime('%H:%M') }} Uhr</strong>{% endif %}</div>
+                {% if selected_spot.reservation.notes %}<div class="occupant-notes">{{ selected_spot.reservation.notes }}</div>{% endif %}
+                <div style="margin-top:0.5rem;font-size:0.75rem;color:var(--color-text-secondary);">Res. #{{ selected_spot.reservation.id }}</div>
+            </div>
+            <div class="spot-actions">
+                <form method="get" action="/reservierung/{{ selected_spot.reservation.id }}"><button type="submit" class="btn btn-outline btn-sm" style="width:100%;">📋 Bearbeiten</button></form>
+                <form method="post" action="/spots/{{ selected_spot.id }}/release" style="margin-top:0.5rem;"><input type="hidden" name="mode" value="free"><button type="submit" class="btn btn-outline btn-sm" style="width:100%;"> Frei melden</button></form>
+                <form method="post" action="/spots/{{ selected_spot.id }}/release" style="margin-top:0.5rem;"><input type="hidden" name="mode" value="checkout"><button type="submit" class="btn btn-danger btn-sm" style="width:100%;">✅ Checkout</button></form>
+                <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--color-border);">
+                    <form method="post" action="/spots/{{ selected_spot.id }}/close" style="display:flex;gap:0.5rem;">
+                        <input type="text" name="reason" placeholder="Sperrgrund" required style="flex:1;padding:0.4rem;border:1px solid var(--color-border);border-radius:4px;font-size:0.85rem;">
+                        <button type="submit" class="btn btn-sm" style="background:var(--color-warning);color:white;">🔒</button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="spot-free-banner"><span style="font-size:2rem;">🅿</span><span>Platz frei</span></div>
+            <div class="spot-actions">
+                <h4 style="font-size:0.9rem;margin-bottom:0.5rem;">Fahrzeug setzen:</h4>
+                <div class="vehicle-picker-list">
+                    {% if unassigned_reservations %}
+                    <div class="picker-section"><div class="picker-section-title">⚡ Ohne Platz ({{ unassigned_reservations|length }})</div>
+                    {% for res in unassigned_reservations %}
+                    <form method="post" action="/spots/{{ selected_spot.id }}/assign" class="vehicle-picker-item">
+                        <input type="hidden" name="reservation_id" value="{{ res.id }}">
+                        <button type="submit" class="picker-item-btn"><span class="picker-plate">{{ res.plate_raw }}</span><span class="picker-name">{{ res.first_name }} {{ res.last_name }}</span><span class="picker-badge">ohne Platz</span>{% if res.valid_until %}<span class="picker-time">bis {{ res.valid_until.strftime('%H:%M') }}</span>{% endif %}</button>
+                    </form>
+                    {% endfor %}</div>{% endif %}
+                    {% if other_spot_reservations %}
+                    <div class="picker-section"><div class="picker-section-title">🔄 Auf anderem Platz ({{ other_spot_reservations|length }})</div>
+                    {% for res in other_spot_reservations %}
+                    <form method="post" action="/spots/{{ selected_spot.id }}/assign" class="vehicle-picker-item">
+                        <input type="hidden" name="reservation_id" value="{{ res.id }}">
+                        <button type="submit" class="picker-item-btn"><span class="picker-plate">{{ res.plate_raw }}</span><span class="picker-name">{{ res.first_name }} {{ res.last_name }}</span><span class="picker-badge-warning">Platz {{ res.spot.spot_number }} →</span>{% if res.valid_until %}<span class="picker-time">bis {{ res.valid_until.strftime('%H:%M') }}</span>{% endif %}</button>
+                    </form>
+                    {% endfor %}</div>{% endif %}
+                    {% if not unassigned_reservations and not other_spot_reservations %}
+                    <div class="empty-picker"><p>Keine aktiven Reservierungen.</p></div>{% endif %}
+                </div>
+                <div class="walkin-section">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('walkin-form').style.display=document.getElementById('walkin-form').style.display?'none':'block'" style="width:100%;">+ Walk-in</button>
+                    <div id="walkin-form" style="display:none;margin-top:0.5rem;">
+                        <form method="post" action="/spots/{{ selected_spot.id }}/walkin">
+                            <div style="margin-bottom:0.5rem;"><input type="text" name="plate" placeholder="Kennzeichen *" required style="width:100%;padding:0.5rem;border:1px solid var(--color-border);border-radius:4px;box-sizing:border-box;"></div>
+                            <div style="margin-bottom:0.5rem;"><input type="text" name="until" placeholder="Bis (HH:MM)" style="width:100%;padding:0.5rem;border:1px solid var(--color-border);border-radius:4px;box-sizing:border-box;"></div>
+                            <button type="submit" class="btn btn-primary btn-sm" style="width:100%;">Erfassen</button>
+                        </form>
+                    </div>
+                </div>
+                <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--color-border);">
+                    <form method="post" action="/spots/{{ selected_spot.id }}/close" style="display:flex;gap:0.5rem;">
+                        <input type="text" name="reason" placeholder="Sperrgrund" required style="flex:1;padding:0.4rem;border:1px solid var(--color-border);border-radius:4px;font-size:0.85rem;">
+                        <button type="submit" class="btn btn-sm" style="background:var(--color-warning);color:white;">🔒</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% include "_map_svg.html" %}
+</div>
+{% endblock %}

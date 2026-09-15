@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Alle Reservierungen - Parking Cockpit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>📋 Alle Reservierungen</h2>
+    <div class="flex gap-1">
+        <a href="/reservierung/Neu" class="btn btn-primary">+ Neue Reservierung</a>
+        {% if reservations %}
+        <form method="GET" action="/archiv/export">
+            <input type="hidden" name="provider" value="{{ filters.provider }}">
+            <input type="hidden" name="status" value="{{ filters.status }}">
+            <input type="hidden" name="search" value="{{ filters.search }}">
+            <button type="submit" class="btn btn-secondary">📥 CSV Export</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<form method="GET" class="filters">
+    <div class="filter-group">
+        <label for="provider">Anbieter</label>
+        <select name="provider" id="provider">
+            <option value="">Alle</option>
+            <option value="KRAVAG" {% if filters.provider == 'KRAVAG' %}selected{% endif %}>Kravag</option>
+            <option value="TRUCKS_NB" {% if filters.provider == 'TRUCKS_NB' %}selected{% endif %}>Trucks nB</option>
+            <option value="SNAP" {% if filters.provider == 'SNAP' %}selected{% endif %}>SNAP</option>
+            <option value="HOMEPAGE" {% if filters.provider == 'HOMEPAGE' %}selected{% endif %}>Homepage</option>
+            <option value="MANUAL" {% if filters.provider == 'MANUAL' %}selected{% endif %}>Manuell</option>
+            <option value="UNKNOWN" {% if filters.provider == 'UNKNOWN' %}selected{% endif %}>Unbekannt</option>
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label for="status">Status</label>
+        <select name="status" id="status">
+            <option value="">Alle</option>
+            <option value="NEW" {% if filters.status == 'NEW' %}selected{% endif %}>Neu</option>
+            <option value="CONFIRMED" {% if filters.status == 'CONFIRMED' %}selected{% endif %}>Bestätigt</option>
+            <option value="CANCELLED" {% if filters.status == 'CANCELLED' %}selected{% endif %}>Storniert</option>
+            <option value="DONE" {% if filters.status == 'DONE' %}selected{% endif %}>Abgeschlossen</option>
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label for="search">Suche</label>
+        <input type="text" name="search" id="search" value="{{ filters.search }}" placeholder="Kennzeichen oder Name...">
+    </div>
+    
+    <div class="filter-group" style="justify-content: flex-end;">
+        <label>&nbsp;</label>
+        <button type="submit" class="btn btn-primary">Filtern</button>
+        <a href="/archiv" class="btn btn-outline">Zurücksetzen</a>
+    </div>
+</form>
+
+{% if reservations %}
+<div class="card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Kennzeichen</th>
+                    <th>Name</th>
+                    <th>Anbieter</th>
+                    <th>Von</th>
+                    <th>Bis</th>
+                    <th>Status</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for res in reservations %}
+                <tr>
+                    <td><strong>{{ res.plate_raw or '—' }}</strong></td>
+                    <td>{{ res.first_name or '' }} {{ res.last_name or '' }}</td>
+                    <td>
+                        {% if res.provider %}
+                        <span class="badge badge-provider">{{ res.provider }}</span>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td>{{ res.valid_from.strftime('%d.%m.%Y %H:%M') if res.valid_from else '—' }}</td>
+                    <td>{{ res.valid_until.strftime('%d.%m.%Y %H:%M') if res.valid_until else '—' }}</td>
+                    <td>
+                        {% if res.status == 'NEW' %}
+                        <span class="badge badge-status-new">Neu</span>
+                        {% elif res.status == 'CONFIRMED' %}
+                        <span class="badge badge-status-confirmed">Bestätigt</span>
+                        {% elif res.status == 'CANCELLED' %}
+                        <span class="badge badge-status-cancelled">Storniert</span>
+                        {% elif res.status == 'DONE' %}
+                        <span class="badge badge-status-done">Erledigt</span>
+                        {% endif %}
+                        {% if res.incomplete_flag %}
+                        <span class="badge" style="background: var(--color-warning); color: white;">⚠</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/reservierung/{{ res.id }}" class="btn btn-sm btn-outline">Bearbeiten</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}&provider={{ filters.provider }}&status={{ filters.status }}&search={{ filters.search }}">&laquo; Zurück</a>
+    {% endif %}
+    
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+        <span class="current">{{ p }}</span>
+        {% elif p >= page - 2 and p <= page + 2 %}
+        <a href="?page={{ p }}&provider={{ filters.provider }}&status={{ filters.status }}&search={{ filters.search }}">{{ p }}</a>
+        {% endif %}
+    {% endfor %}
+    
+    {% if page < total_pages %}
+    <a href="?page={{ page + 1 }}&provider={{ filters.provider }}&status={{ filters.status }}&search={{ filters.search }}">Weiter &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<div style="margin-top: 1rem; text-align: right; color: var(--color-text-secondary);">
+    {{ total }} Reservierungen gefunden
+</div>
+
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">📋</div>
+    <h3>Keine Reservierungen gefunden</h3>
+    <p>Versuchen Sie, die Filterkriterien anzupassen.</p>
+</div>
+{% endif %}
+{% endblock %}

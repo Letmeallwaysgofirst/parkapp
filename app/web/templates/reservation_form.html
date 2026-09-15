@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{% if reservation %}Reservierung bearbeiten{% else %}Neue Reservierung{% endif %} - Parking Cockpit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{% if reservation %}✏️ Reservierung #{{ reservation.id }} bearbeiten{% else %}➕ Neue Reservierung erstellen{% endif %}</h2>
+</div>
+
+<div class="card">
+    <form method="POST">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="provider">Anbieter</label>
+                <select name="provider" id="provider" required>
+                    <option value="">-- Bitte wählen --</option>
+                    <option value="KRAVAG" {% if reservation and reservation.provider == 'KRAVAG' %}selected{% endif %}>Kravag</option>
+                    <option value="TRUCKS_NB" {% if reservation and reservation.provider == 'TRUCKS_NB' %}selected{% endif %}>Trucks nB</option>
+                    <option value="SNAP" {% if reservation and reservation.provider == 'SNAP' %}selected{% endif %}>SNAP</option>
+                    <option value="HOMEPAGE" {% if reservation and reservation.provider == 'HOMEPAGE' %}selected{% endif %}>Homepage</option>
+                    <option value="MANUAL" {% if reservation and reservation.provider == 'MANUAL' %}selected{% endif %}>Manuell</option>
+                    <option value="UNKNOWN" {% if reservation and reservation.provider == 'UNKNOWN' %}selected{% endif %}>Unbekannt</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select name="status" id="status" required>
+                    <option value="NEW" {% if reservation and reservation.status == 'NEW' %}selected{% endif %}>Neu</option>
+                    <option value="CONFIRMED" {% if reservation and reservation.status == 'CONFIRMED' %}selected{% endif %}>Bestätigt</option>
+                    <option value="CANCELLED" {% if reservation and reservation.status == 'CANCELLED' %}selected{% endif %}>Storniert</option>
+                    <option value="DONE" {% if reservation and reservation.status == 'DONE' %}selected{% endif %}>Abgeschlossen</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="plate_raw">Kennzeichen</label>
+                <input type="text" name="plate_raw" id="plate_raw" value="{{ reservation.plate_raw or '' }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="voucher_code">Gutschein-Code</label>
+                <input type="text" name="voucher_code" id="voucher_code" value="{{ reservation.voucher_code or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="first_name">Vorname</label>
+                <input type="text" name="first_name" id="first_name" value="{{ reservation.first_name or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="last_name">Nachname</label>
+                <input type="text" name="last_name" id="last_name" value="{{ reservation.last_name or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">E-Mail</label>
+                <input type="email" name="email" id="email" value="{{ reservation.email or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="external_reservation_id">Externe Reservierungs-ID</label>
+                <input type="text" name="external_reservation_id" id="external_reservation_id" value="{{ reservation.external_reservation_id or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="valid_from">Anfang (Datum)</label>
+                <input type="date" name="valid_from_date" id="valid_from_date" 
+                       value="{{ reservation.valid_from.strftime('%Y-%m-%d') if reservation and reservation.valid_from else '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="valid_from_time">Anfang (Uhrzeit)</label>
+                <input type="time" name="valid_from_time" id="valid_from_time"
+                       value="{{ reservation.valid_from.strftime('%H:%M') if reservation and reservation.valid_from else '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="valid_until_date">Ende (Datum)</label>
+                <input type="date" name="valid_until_date" id="valid_until_date"
+                       value="{{ reservation.valid_until.strftime('%Y-%m-%d') if reservation and reservation.valid_until else '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="valid_until_time">Ende (Uhrzeit)</label>
+                <input type="time" name="valid_until_time" id="valid_until_time"
+                       value="{{ reservation.valid_until.strftime('%H:%M') if reservation and reservation.valid_until else '' }}">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Notizen</label>
+            <textarea name="notes" id="notes" rows="4">{{ reservation.notes or '' }}</textarea>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            {% if reservation %}
+            <a href="/reservierung/{{ reservation.id }}/löschen" 
+               class="btn btn-danger"
+               onclick="return confirm('Sind Sie sicher, dass Sie diese Reservierung löschen möchten?');">
+                🗑️ Löschen
+            </a>
+            {% endif %}
+            <a href="/archiv" class="btn btn-outline">Abbrechen</a>
+            <button type="submit" class="btn btn-primary">💾 Speichern</button>
+        </div>
+    </form>
+</div>
+
+{% if reservation and audit_log %}
+<div class="card mt-2">
+    <h3 style="margin-bottom: 1rem;">📝 Änderungshistorie</h3>
+    <div style="font-size: 0.85rem; color: var(--color-text-secondary);">
+        {% for log in audit_log %}
+        <div style="padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
+            <strong>{{ log.created_at.strftime('%d.%m.%Y %H:%M') }}</strong>
+            {% if log.action %}: {{ log.action }}{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if auto_refresh %}
+    <meta http-equiv="refresh" content="{{ auto_refresh }}">
+    {% endif %}
+    <title>{% block title %}Parking Cockpit{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header class="header">
+        <h1>🅿 Parking Cockpit</h1>
+        <nav class="header-nav">
+            <a href="/" {% if request.url.path == '/' %}class="active"{% endif %}>Aktuell</a>
+            <a href="/karte" {% if request.url.path == '/karte' %}class="active"{% endif %}>Platzkarte</a>
+            <a href="/kommend" {% if request.url.path == '/kommend' %}class="active"{% endif %}>Kommend</a>
+            <a href="/archiv" {% if request.url.path == '/archiv' %}class="active"{% endif %}>Alle / Archiv</a>
+            <a href="/klärungsfälle" {% if request.url.path == '/klärungsfälle' %}class="active"{% endif %}>
+                Klärungsfälle
+                {% if queue_count > 0 %}
+                <span class="badge badge-count">{{ queue_count }}</span>
+                {% endif %}
+            </a>
+            <span style="margin-left: 1rem; opacity: 0.7;">
+                Jetzt: {{ current_time }}
+            </span>
+        </nav>
+    </header>
+    
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer style="text-align: center; padding: 1rem; color: var(--color-text-secondary); font-size: 0.8rem;">
+        Parking Cockpit v1.0 | Alle Daten werden lokal gespeichert
+    </footer>
+</body>
+</html>
