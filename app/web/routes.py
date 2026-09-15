@@ -799,23 +799,3 @@ async def karte_auto_place(
 
     db.commit()
     return RedirectResponse(url="/karte", status_code=303)
-@bp.route('/spots/<int:spot_id>/panel')
-@login_required
-def spot_panel(spot_id):
-    """Lädt den Inhalt des Seitenpanels für einen Spot."""
-    spot = ParkingSpot.query.get_or_404(spot_id)
-    # Hole alle aktiven Reservierungen für die Picker-Liste
-    all_reservations = Reservation.query.filter(
-        Reservation.status.in_(['NEW', 'CONFIRMED']),
-        Reservation.valid_from <= datetime.now(timezone.utc),
-        Reservation.valid_until >= datetime.now(timezone.utc)
-    ).all()
-    
-    # Trenne in "Ohne Platz" und "Auf anderem Platz"
-    unassigned = [r for r in all_reservations if r.spot_id is None]
-    on_other_spots = [r for r in all_reservations if r.spot_id is not None and r.spot_id != spot_id]
-    
-    return render_template('components/spot_panel_content.html', 
-                           spot=spot, 
-                           unassigned=unassigned, 
-                           on_other_spots=on_other_spots)
