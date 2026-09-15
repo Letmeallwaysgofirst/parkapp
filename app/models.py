@@ -3,6 +3,7 @@
 import enum
 from datetime import datetime
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import (
     String, Text, Boolean, Integer, DateTime, ForeignKey, Enum, UniqueConstraint, Index
@@ -70,13 +71,13 @@ class ParkingSpot(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow
+        default=lambda: datetime.now(ZoneInfo("Europe/Berlin"))
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow
+        default=lambda: datetime.now(ZoneInfo("Europe/Berlin")),
+        onupdate=lambda: datetime.now(ZoneInfo("Europe/Berlin"))
     )
     
     # Relationships
@@ -150,13 +151,13 @@ class Reservation(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), 
         nullable=False, 
-        default=datetime.utcnow
+        default=lambda: datetime.now(ZoneInfo("Europe/Berlin"))
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), 
         nullable=False, 
-        default=datetime.utcnow, 
-        onupdate=datetime.utcnow
+        default=lambda: datetime.now(ZoneInfo("Europe/Berlin")), 
+        onupdate=lambda: datetime.now(ZoneInfo("Europe/Berlin"))
     )
     
     # Relationships
@@ -214,7 +215,7 @@ class MailLog(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow
+        default=lambda: datetime.now(ZoneInfo("Europe/Berlin"))
     )
     
     # Relationships
@@ -246,7 +247,7 @@ class ParseQueue(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow
+        default=lambda: datetime.now(ZoneInfo("Europe/Berlin"))
     )
     resolved_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
