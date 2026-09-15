@@ -1,0 +1,145 @@
+# Provider Parser Configurations
+# Add new providers by adding entries here - no code changes required
+
+providers:
+  # Generic external portal - booking timestamp only, no window
+  # TODO: Replace with real provider once samples confirm attribution
+  GENERIC_EXTERNAL:
+    name: "External Portal (Generic)"
+    detection:
+      rules:
+        - type: "body_marker"
+          pattern: "Ein Parkplatz wurde bei Ihnen"
+          flags: "i"
+        - type: "body_marker"
+          pattern: "Datum und Uhrzeit:"
+          flags: "i"
+    
+    extraction:
+      field_mappings:
+        - target: "plate_raw"
+          source_type: "value_after_marker"
+          marker: "Kennzeichen des Fahrzeugs:"
+          strip: true
+        - target: "last_name"
+          source_type: "value_after_marker"
+          marker: "Name des Fahrzeughalters:"
+          strip: true
+        # booked_at is the booking timestamp, NOT the stay window
+        - target: "booked_at"
+          source_type: "value_after_marker"
+          marker: "Datum und Uhrzeit:"
+          format: "%d/%m/%Y %H:%M"
+    
+    datetime:
+      # No valid_from/valid_until - will be set by operator manually
+      booked_at:
+        source: "value_after_marker"
+        marker: "Datum und Uhrzeit:"
+        format: "%d/%m/%Y %H:%M"
+    
+    special_flags:
+      incomplete_data: true  # Always flag as incomplete since window is missing
+      requires_manual_completion: true
+  
+  HOMEPAGE:
+    name: "Homepage Reservierungen"
+    detection:
+      rules:
+        - type: "subject"
+          pattern: "Reservierungsanfrage.*Caravan"
+          flags: "i"
+        - type: "body_marker"
+          pattern: "Neue Reservierungsanfrage von"
+          flags: "i"
+    
+    extraction:
+      field_mappings:
+        - target: "first_name"
+          source_type: "split"
+          source: "Vorname / Nachname"
+          split_index: 0
+          strip: true
+        - target: "last_name"
+          source_type: "split"
+          source: "Vorname / Nachname"
+          split_index: 1
+          strip: true
+        - target: "email"
+          source_type: "value"
+          key: "E-Mail"
+          strip: true
+        - target: "plate_raw"
+          source_type: "value"
+          key: "Kennzeichen"
+          strip: true
+        - target: "voucher_code"
+          source_type: "value"
+          key: "Gutschein-Code"
+          allow_empty: true
+          null_if_empty: true
+    
+    datetime:
+      valid_from:
+        date_source: "von"
+        date_format: "%Y-%m-%d"
+        time_source: "Uhrzeit Ankunft ca."
+        time_format: "%H:%M"
+        combine: "append"
+      valid_until:
+        date_source: "bis"
+        date_format: "%Y-%m-%d"
+        time_source: "Uhrzeit Abfahrt ca."
+        time_format: "%H:%M"
+        combine: "append"
+  
+  # TODO: Replace with real parser once Kravag samples are available
+  KRAVAG:
+    name: "Kravag Truck Parking"
+    detection:
+      rules:
+        - type: "sender_domain"
+          pattern: "kravag\\.de"
+          flags: "i"
+        - type: "subject"
+          pattern: "Reservierung|Buchung"
+          flags: "i"
+    
+    extraction:
+      field_mappings: []
+    
+    datetime: {}
+  
+  # TODO: Replace with real parser once Trucks nB samples are available
+  TRUCKS_NB:
+    name: "Trucks nB"
+    detection:
+      rules:
+        - type: "sender_domain"
+          pattern: "trucksnb\\.com"
+          flags: "i"
+        - type: "subject"
+          pattern: "Parking.*Reservation"
+          flags: "i"
+    
+    extraction:
+      field_mappings: []
+    
+    datetime: {}
+  
+  # TODO: Replace with real parser once SNAP samples are available
+  SNAP:
+    name: "SNAP Parking"
+    detection:
+      rules:
+        - type: "sender_domain"
+          pattern: "snap\\.parking"
+          flags: "i"
+        - type: "subject"
+          pattern: "Booking"
+          flags: "i"
+    
+    extraction:
+      field_mappings: []
+    
+    datetime: {}
