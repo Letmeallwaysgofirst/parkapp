@@ -799,3 +799,56 @@ async def karte_auto_place(
 
     db.commit()
     return RedirectResponse(url="/karte", status_code=303)
+
+
+@app.post("/archiv/bulk-action")
+async def bulk_action(
+    request: Request,
+    action: str = Form(...),
+    reservation_ids: list[int] = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Process bulk action on selected reservations."""
+    if not require_auth(request):
+        return RedirectResponse(url="/login", status_code=303)
+    
+    reservation_repo = ReservationRepository(db)
+    
+    # Get current filter params from referer or use defaults
+    referer = request.headers.get("referer", "/archiv")
+    from urllib.parse import urlparse, parse_qs
+    parsed = urlparse(referer)
+    params = parse_qs(parsed.query)
+    provider = params.get("provider", [None])[0]
+    status = params.get("status", [None])[0]
+    search = params.get("search", [None])[0]
+    
+    target_status = None
+    if action == "confirm":
+        target_status = ReservationStatus.CONFIRMED
+    elif action == "cancel":
+        target_status = ReservationStatus.CANCELLED
+    elif action == "complete":
+        target_status = ReservationStatus.DONE
+    
+    if target_status:
+        for res_id in reservation_ids:
+            reservation = reservation_repo.get_by_id(res_id)
+            if reservation:
+                reservation.status = target_status
+    
+    db.commit()
+    
+    # Build redirect URL with preserved filters
+    redirect_url = "/archiv"
+    query_parts = []
+    if provider:
+        query_parts.append(f"provider={provider}")
+    if status:
+        query_parts.append(f"status={status}")
+    if search:
+        query_parts.append(f"search={search}")
+    if query_parts:
+        redirect_url += "?" + "&".join(query_parts)
+    
+    return RedirectResponse(url=redirect_url, status_code=303)

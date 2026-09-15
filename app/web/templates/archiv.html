@@ -56,11 +56,13 @@
 </form>
 
 {% if reservations %}
+<form method="POST" action="/archiv/bulk-action" id="bulk-form">
 <div class="card">
     <div class="table-container">
         <table>
             <thead>
                 <tr>
+                    <th style="width: 40px;"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th>
                     <th>Kennzeichen</th>
                     <th>Name</th>
                     <th>Anbieter</th>
@@ -73,6 +75,7 @@
             <tbody>
                 {% for res in reservations %}
                 <tr>
+                    <td><input type="checkbox" name="reservation_ids" value="{{ res.id }}" class="reservation-checkbox"></td>
                     <td><strong>{{ res.plate_raw or '—' }}</strong></td>
                     <td>{{ res.first_name or '' }} {{ res.last_name or '' }}</td>
                     <td>
@@ -108,6 +111,16 @@
     </div>
 </div>
 
+<div class="bulk-actions" id="bulk-actions" style="display: none;">
+    <span class="bulk-count" id="bulk-count">0 ausgewählt</span>
+    <div class="bulk-buttons">
+        <button type="submit" name="action" value="confirm" class="btn btn-primary" onclick="return confirmBulk('bestätigen')">✓ Bestätigen</button>
+        <button type="submit" name="action" value="cancel" class="btn btn-danger" onclick="return confirmBulk('stornieren')">✗ Stornieren</button>
+        <button type="submit" name="action" value="complete" class="btn btn-success" onclick="return confirmBulk('abschließen')">✔ Abschließen</button>
+    </div>
+</div>
+</form>
+
 {% if total_pages > 1 %}
 <div class="pagination">
     {% if page > 1 %}
@@ -139,4 +152,73 @@
     <p>Versuchen Sie, die Filterkriterien anzupassen.</p>
 </div>
 {% endif %}
+
+<script>
+function toggleSelectAll(source) {
+    const checkboxes = document.querySelectorAll('.reservation-checkbox');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checked = document.querySelectorAll('.reservation-checkbox:checked').length;
+    const bulkActions = document.getElementById('bulk-actions');
+    const bulkCount = document.getElementById('bulk-count');
+    if (checked > 0) {
+        bulkActions.style.display = 'flex';
+        bulkCount.textContent = checked + ' ausgewählt';
+    } else {
+        bulkActions.style.display = 'none';
+    }
+}
+
+function confirmBulk(action) {
+    const checked = document.querySelectorAll('.reservation-checkbox:checked').length;
+    if (checked === 0) {
+        alert('Bitte mindestens eine Reservierung auswählen.');
+        return false;
+    }
+    return confirm('Möchten Sie wirklich ' + checked + ' Reservierung(en) ' + action + '?');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.reservation-checkbox');
+    checkboxes.forEach(cb => cb.addEventListener('change', updateBulkActions));
+});
+</script>
+
+<style>
+.bulk-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--color-background-alt);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    gap: 1rem;
+}
+.bulk-count {
+    font-weight: bold;
+    color: var(--color-primary);
+}
+.bulk-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+.btn-danger {
+    background: var(--color-error);
+    color: white;
+}
+.btn-danger:hover {
+    opacity: 0.9;
+}
+.btn-success {
+    background: var(--color-success);
+    color: white;
+}
+.btn-success:hover {
+    opacity: 0.9;
+}
+</style>
 {% endblock %}
