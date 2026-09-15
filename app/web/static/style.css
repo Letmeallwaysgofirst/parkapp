@@ -142,43 +142,96 @@ body {
 /* Reservation cards - compact for dashboard */
 .reservation-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.4rem;
 }
 
 .reservation-card {
     background: var(--color-card);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
-    padding: 0.75rem;
+    padding: 0.5rem;
     transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: visible;
 }
 
 .reservation-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
+    z-index: 10;
 }
 
 .reservation-plate {
-    font-size: 1.25rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--color-primary);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
     font-family: monospace;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reservation-card .reservation-name,
+.reservation-card .reservation-time,
+.reservation-card .reservation-meta,
+.reservation-card > div[style*="margin-top"] {
+    display: none;
+}
+
+.reservation-card:hover .reservation-name,
+.reservation-card:hover .reservation-time,
+.reservation-card:hover .reservation-meta,
+.reservation-card:hover > div[style*="margin-top"] {
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    padding: 0.5rem;
+    z-index: 100;
+    min-width: 200px;
+}
+
+.reservation-card:hover .reservation-name {
+    position: static;
+    font-size: 0.8rem;
+    margin-bottom: 0.2rem;
+}
+
+.reservation-card:hover .reservation-time {
+    position: static;
+    font-size: 0.7rem;
+    margin-bottom: 0.2rem;
+}
+
+.reservation-card:hover .reservation-meta {
+    position: static;
+    margin-top: 0.3rem;
+}
+
+.reservation-card:hover > div[style*="margin-top"] {
+    position: static;
+    margin-top: 0.3rem;
 }
 
 .reservation-name {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: var(--color-text);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .reservation-time {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: var(--color-text-secondary);
 }
 
@@ -686,6 +739,7 @@ tr:hover {
     gap: 1rem;
     position: relative;
     align-items: flex-start;
+    max-height: 400px;
 }
 
 .karte-map {
@@ -693,16 +747,16 @@ tr:hover {
     background: var(--color-card);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
-    padding: 1rem;
+    padding: 0.5rem;
     position: relative;
     overflow: visible;
-    min-height: 400px;
+    min-height: 300px;
 }
 
 .parking-svg {
     width: 100%;
     height: auto;
-    min-height: 400px;
+    min-height: 300px;
     display: block;
     position: relative;
     z-index: 1;
@@ -724,13 +778,25 @@ tr:hover {
 .spot-occupied-closed { fill: #ef4444; stroke: #ca8a04; stroke-width: 2; stroke-dasharray: 5,3; }
 
 .spot-label {
-    font-size: 7px;
+    font-size: 6px;
     font-weight: 700;
     fill: white;
     text-anchor: middle;
     dominant-baseline: middle;
     pointer-events: none;
     text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+
+.spot-plate-label {
+    font-size: 5px;
+    font-weight: 600;
+    fill: white;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    font-family: monospace;
+    letter-spacing: 0.5px;
 }
 
 .spot-panel {

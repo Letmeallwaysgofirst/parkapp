@@ -1,7 +1,7 @@
 {# Shared parking-lot SVG map. Expects: spots, map_mode, has_photo, link_to (optional) #}
 <div class="karte-map">
     {% if map_mode == 'foto' and has_photo %}
-    <div style="position:absolute;top:1rem;left:1rem;right:1rem;bottom:1rem;z-index:0;">
+    <div style="position:absolute;top:0.5rem;left:0.5rem;right:0.5rem;bottom:0.5rem;z-index:0;">
         <img src="/static/lot.jpg" alt="Parkplatz-Luftbild" style="width:100%;height:100%;object-fit:contain;">
     </div>
     {% endif %}
@@ -13,8 +13,8 @@
             </pattern>
         </defs>
         <rect width="1000" height="600" fill="url(#grid)"/>
-        <text x="20" y="80" font-size="16" fill="#999" font-weight="600">Gebäude / Rezeption</text>
-        <rect x="10" y="90" width="980" height="2" fill="#ddd"/>
+        <text x="20" y="60" font-size="14" fill="#999" font-weight="600">Gebäude / Rezeption</text>
+        <rect x="10" y="70" width="980" height="2" fill="#ddd"/>
         {% endif %}
 
         {% for spot in spots %}
@@ -28,13 +28,16 @@
         <a href="{% if link_to %}{{ link_to }}?spot_id={{ spot.id }}{% if map_mode == 'foto' %}&mode=foto{% endif %}{% else %}/karte?spot_id={{ spot.id }}{% endif %}">
             <g class="parking-spot" transform="rotate({{ spot.rotation }} {{ spot.x*10 + spot.width*5 }} {{ spot.y*6 + spot.height*3 }})">
                 <rect x="{{ spot.x*10 }}" y="{{ spot.y*6 }}" width="{{ spot.width*10 }}" height="{{ spot.height*6 }}"
-                      rx="3" class="{{ spot_class }}"
-                      {% if spot.spot_type == 'WOMEN' %}stroke="#ec4899" stroke-width="3"{% endif %}>
+                      rx="2" class="{{ spot_class }}"
+                      {% if spot.spot_type == 'WOMEN' %}stroke="#ec4899" stroke-width="2"{% endif %}>
                     <title>Platz {{ spot.spot_number }}{% if spot.is_closed %} — GESPERRT: {{ spot.closed_reason or '' }}{% elif spot.reservation %} — {{ spot.reservation.plate_raw or '' }} ({{ spot.reservation.first_name or '' }} {{ spot.reservation.last_name or '' }}), {{ spot.reservation.provider }}, bis {{ spot.reservation.valid_until.strftime('%H:%M') if spot.reservation.valid_until else '—' }}{% else %} — frei{% endif %}</title>
                 </rect>
                 <text x="{{ spot.x*10 + spot.width*5 }}" y="{{ spot.y*6 + spot.height*3 }}" class="spot-label">{{ spot.spot_number }}</text>
+                {% if spot.reservation %}
+                <text x="{{ spot.x*10 + spot.width*5 }}" y="{{ spot.y*6 + spot.height*3 + 10 }}" class="spot-plate-label">{{ spot.reservation.plate_raw or '' }}</text>
+                {% endif %}
                 {% if spot.spot_type == 'WOMEN' %}
-                <text x="{{ spot.x*10 + spot.width*5 }}" y="{{ spot.y*6 + spot.height*3 + 26 }}" font-size="18" text-anchor="middle" fill="#ec4899">♀</text>
+                <text x="{{ spot.x*10 + spot.width*5 }}" y="{{ spot.y*6 + spot.height*3 + 20 }}" font-size="14" text-anchor="middle" fill="#ec4899">♀</text>
                 {% endif %}
             </g>
         </a>
