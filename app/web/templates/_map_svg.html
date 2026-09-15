@@ -5,14 +5,14 @@
         <img src="/static/lot.jpg" alt="Parkplatz-Luftbild" style="width:100%;height:100%;object-fit:contain;">
     </div>
     {% endif %}
-    <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" class="parking-svg" style="position:relative;z-index:1;">
+    <svg viewBox="0 0 1000 800" xmlns="http://www.w3.org/2000/svg" class="parking-svg" style="position:relative;z-index:1;">
         {% if map_mode != 'foto' %}
         <defs>
             <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
                 <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#e8e8e8" stroke-width="0.5"/>
             </pattern>
         </defs>
-        <rect width="1000" height="600" fill="url(#grid)"/>
+        <rect width="1000" height="800" fill="url(#grid)"/>
         <text x="20" y="60" font-size="14" fill="#999" font-weight="600">Gebäude / Rezeption</text>
         <rect x="10" y="70" width="980" height="2" fill="#ddd"/>
         {% endif %}
